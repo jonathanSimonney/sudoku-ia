@@ -3,9 +3,16 @@ package main
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
+	"log"
 	"math/rand"
+	"os"
+	"runtime"
+	"runtime/pprof"
 	"time"
 )
+
+//global var
+var bestGrid Grid
 
 //structure for the grid
 type Grid struct{
@@ -94,7 +101,6 @@ func (this *Grid) fillGrid(howManyValues int){
 		x := r1.Intn(9)
 		y := r1.Intn(9)
 
-		fmt.Println(x, y, currentValue)
 		addSuccessfull, _ := this.addSolvingNumber(currentValue, x, y, true)
 		if addSuccessfull{
 			nbRepetition++
@@ -111,6 +117,35 @@ func (this *Grid) emptyGrid(){
 	}
 }
 
+//solver for the grid
+func recursivelySolveGrid(grid Grid){
+	for y := range make([]int, 9){
+		for x := range make([]int, 9){
+			if grid.Values[y][x] == 0{
+				//fmt.Println("trying to fill ", x, y)
+				//var successVar []int
+				for solvingValueMinus := range make([]int, 9){
+					solvingValue := solvingValueMinus + 1 //because it is currently between 0 and 8, not 1 and 9
+					//fmt.Println("with value ", solvingValue)
+					addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
+					if addSuccessfull{
+						//successVar = append(successVar, solvingValue)
+						//fmt.Println("add was successfull with value ", solvingValue," on ", x, y)
+						//newGrid.prettyPrint()
+						recursivelySolveGrid(newGrid)
+					}
+				}
+				//for _, i := range successVar{
+				//	fmt.Println(i)
+				//}
+				return
+			}
+		}
+	}
+
+	bestGrid = grid
+}
+
 //helper function to check if int is in list
 func intInSlice(a int, list [9]int) bool {
 	for _, b := range list {
@@ -121,9 +156,7 @@ func intInSlice(a int, list [9]int) bool {
 	return false
 }
 
-func main()  {
-	fmt.Println("hey")
-
+func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
 		{5, 3, 0, 0, 7, 0, 0, 0, 0},
@@ -142,6 +175,39 @@ func main()  {
 	currentGrid.prettyPrint()
 	nextGrid.prettyPrint()
 
-	currentGrid.fillGrid(30)
+	//currentGrid.fillGrid(30)
+	//currentGrid.prettyPrint()
+
+	recursivelySolveGrid(currentGrid)
 	currentGrid.prettyPrint()
+
+	bestGrid.prettyPrint()
+}
+
+func main(){
+	f, err := os.Create("perf_cpu.perf")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
+	begin := time.Now()
+	programMain()
+	fmt.Println(time.Since(begin))
+
+
+	f, err = os.Create("mem_profile.perf")
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	runtime.GC() // get up-to-date statistics
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+	f.Close()
+
+
 }
