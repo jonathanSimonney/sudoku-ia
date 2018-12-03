@@ -27,8 +27,18 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int) (bool, Grid){
 		return false, copiedGrid
 	}
 
+	//todo check also for square and column
+
 	copiedGrid.Values[y][x] = solving
 	return true, copiedGrid
+}
+
+func (this *Grid) prettyPrint(){
+	for _, row := range this.Values {
+		fmt.Println(row)
+	}
+
+	fmt.Println("*************************************************************************************************")
 }
 
 //helper function to check if int is in list
@@ -59,6 +69,6 @@ func main()  {
 
 	_, nextGrid := currentGrid.addSolvingNumber(6, 2, 0)
 
-	fmt.Println(currentGrid)
-	fmt.Println(nextGrid)
+	currentGrid.prettyPrint()
+	nextGrid.prettyPrint()
 }
