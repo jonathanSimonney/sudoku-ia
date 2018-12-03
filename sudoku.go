@@ -11,9 +11,6 @@ import (
 	"time"
 )
 
-//global var
-var bestGrid Grid
-
 //structure for the grid
 type Grid struct{
 	Values [9][9]int
@@ -118,7 +115,7 @@ func (this *Grid) emptyGrid(){
 }
 
 //solver for the grid
-func recursivelySolveGrid(grid Grid){
+func recursivelySolveGrid(grid Grid) (bool, Grid){
 	for y := range make([]int, 9){
 		for x := range make([]int, 9){
 			if grid.Values[y][x] == 0{
@@ -126,24 +123,20 @@ func recursivelySolveGrid(grid Grid){
 				//var successVar []int
 				for solvingValueMinus := range make([]int, 9){
 					solvingValue := solvingValueMinus + 1 //because it is currently between 0 and 8, not 1 and 9
-					//fmt.Println("with value ", solvingValue)
 					addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
 					if addSuccessfull{
-						//successVar = append(successVar, solvingValue)
-						//fmt.Println("add was successfull with value ", solvingValue," on ", x, y)
-						//newGrid.prettyPrint()
-						recursivelySolveGrid(newGrid)
+						isSolved, solvedGrid := recursivelySolveGrid(newGrid)
+						if isSolved{
+							return true, solvedGrid
+						}
 					}
 				}
-				//for _, i := range successVar{
-				//	fmt.Println(i)
-				//}
-				return
+				return false, grid
 			}
 		}
 	}
 
-	bestGrid = grid
+	return true, grid
 }
 
 //helper function to check if int is in list
@@ -159,15 +152,15 @@ func intInSlice(a int, list [9]int) bool {
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
-		{5, 3, 0, 0, 7, 0, 0, 0, 0},
-		{6, 0, 0, 1, 9, 5, 0, 0, 0},
-		{0, 9, 8, 0, 0, 0, 0, 6, 0},
-		{8, 0, 0, 0, 6, 0, 0, 0, 3},
-		{4, 0, 0, 8, 0, 3, 0, 0, 1},
-		{7, 0, 0, 0, 2, 0, 0, 0, 6},
-		{0, 6, 0, 0, 0, 0, 2, 8, 0},
-		{0, 0, 0, 4, 1, 9, 0, 0, 5},
-		{0, 0, 0, 0, 8, 0, 0, 7, 9},
+		{4, 0, 2, 0, 1, 7, 0, 3, 0},
+		{3, 0, 0, 0, 0, 0, 0, 0, 1},
+		{0, 0, 0, 0, 9, 0, 6, 0, 0},
+		{0, 2, 0, 0, 4, 0, 7, 0, 8},
+		{0, 0, 4, 0, 0, 0, 5, 0, 0},
+		{1, 0, 7, 0, 6, 0, 0, 9, 0},
+		{0, 0, 6, 0, 3, 0, 0, 0, 0},
+		{9, 0, 0, 0, 0, 0, 0, 0, 3},
+		{0, 4, 0, 1, 8, 0, 9, 0, 6},
 	}}
 
 	_, nextGrid := currentGrid.addSolvingNumber(9, 2, 6, false)
@@ -178,10 +171,10 @@ func programMain()  {
 	//currentGrid.fillGrid(30)
 	//currentGrid.prettyPrint()
 
-	recursivelySolveGrid(currentGrid)
-	currentGrid.prettyPrint()
+	_, solvedGrid := recursivelySolveGrid(currentGrid)
+	solvedGrid.prettyPrint()
 
-	bestGrid.prettyPrint()
+	//bestGrid.prettyPrint()
 }
 
 func main(){
@@ -208,6 +201,4 @@ func main(){
 		log.Fatal("could not write memory profile: ", err)
 	}
 	f.Close()
-
-
 }
