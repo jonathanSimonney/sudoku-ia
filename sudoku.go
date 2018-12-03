@@ -88,7 +88,7 @@ func (this *Grid) prettyPrint(){
 func (this *Grid) fillGrid(howManyValues int){
 	this.emptyGrid()
 
-	_, solvedGrid := recursivelySolveGrid(*this, true)
+	_, solvedGrid := recursivelySolveGrid(*this, true, 0)
 	//make sure random changes
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
@@ -115,29 +115,29 @@ func (this *Grid) emptyGrid(){
 }
 
 //solver for the grid
-func recursivelySolveGrid(grid Grid, randomly bool) (bool, Grid){
-	for y := range make([]int, 9){
-		for x := range make([]int, 9){
-			if grid.Values[y][x] == 0{
-				//fmt.Println("trying to fill ", x, y)
-				//var successVar []int
+func recursivelySolveGrid(grid Grid, randomly bool, currentIndex int) (bool, Grid){
+	for currentIndex != 81{
+		currentIndex ++
 
-				arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
-				if randomly{
-					shuffle(arrayIter)
-				}
+		y := (currentIndex - 1) / 9
+		x := (currentIndex - 1) % 9
 
-				for _, solvingValue := range arrayIter{
-					addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
-					if addSuccessfull{
-						isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly)
-						if isSolved{
-							return true, solvedGrid
-						}
+		if grid.Values[y][x] == 0{
+			arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+			if randomly{
+				shuffle(arrayIter)
+			}
+
+			for _, solvingValue := range arrayIter{
+				addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
+				if addSuccessfull{
+					isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly, currentIndex)
+					if isSolved{
+						return true, solvedGrid
 					}
 				}
-				return false, grid
 			}
+			return false, grid
 		}
 	}
 
@@ -182,12 +182,12 @@ func programMain()  {
 
 	currentGrid.prettyPrint()
 
-	_, solvedGrid := recursivelySolveGrid(currentGrid, false)
+	_, solvedGrid := recursivelySolveGrid(currentGrid, false, 0)
 	solvedGrid.prettyPrint()
 
 	currentGrid.fillGrid(10)
 	currentGrid.prettyPrint()
-	_, solvedGrid = recursivelySolveGrid(currentGrid, false)
+	_, solvedGrid = recursivelySolveGrid(currentGrid, false, 0)
 	solvedGrid.prettyPrint()
 }
 
