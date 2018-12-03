@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
+	"math/rand"
+	"time"
 )
 
 //structure for the grid
@@ -43,7 +45,7 @@ func (this *Grid) getIncludingSets(x int, y int) ([9]int, [9]int, [9]int){
 }
 
 //an adder of number which checks if the number can be added
-func (this *Grid) addSolvingNumber(solving int, x int, y int) (bool, Grid){
+func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal bool) (bool, Grid){
 	//first we'll copy the current grid to get a new one
 	copiedGrid := Grid{}
 
@@ -60,8 +62,13 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int) (bool, Grid){
 		return false, copiedGrid
 	}
 
-	copiedGrid.Values[y][x] = solving
-	return true, copiedGrid
+	if modifyOriginal{
+		this.Values[y][x] = solving
+		return true, *this
+	}else{
+		copiedGrid.Values[y][x] = solving
+		return true, copiedGrid
+	}
 }
 
 //a pretty print
@@ -71,6 +78,37 @@ func (this *Grid) prettyPrint(){
 	}
 
 	fmt.Println("*************************************************************************************************")
+}
+
+//a filler for the grid
+func (this *Grid) fillGrid(howManyValues int){
+	this.emptyGrid()
+
+	//make sure random changes
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+
+	nbRepetition := 0
+	for nbRepetition != howManyValues{
+		currentValue := r1.Intn(9) + 1
+		x := r1.Intn(9)
+		y := r1.Intn(9)
+
+		fmt.Println(x, y, currentValue)
+		addSuccessfull, _ := this.addSolvingNumber(currentValue, x, y, true)
+		if addSuccessfull{
+			nbRepetition++
+		}
+	}
+}
+
+//a helper to empty the grid
+func (this *Grid) emptyGrid(){
+	for y := range make([]int, 9){
+		for x := range make([]int, 9){
+			this.Values[y][x] = 0
+		}
+	}
 }
 
 //helper function to check if int is in list
@@ -99,8 +137,11 @@ func main()  {
 		{0, 0, 0, 0, 8, 0, 0, 7, 9},
 	}}
 
-	_, nextGrid := currentGrid.addSolvingNumber(9, 2, 6)
+	_, nextGrid := currentGrid.addSolvingNumber(9, 2, 6, false)
 
 	currentGrid.prettyPrint()
 	nextGrid.prettyPrint()
+
+	currentGrid.fillGrid(30)
+	currentGrid.prettyPrint()
 }
