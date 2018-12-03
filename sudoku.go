@@ -88,17 +88,17 @@ func (this *Grid) prettyPrint(){
 func (this *Grid) fillGrid(howManyValues int){
 	this.emptyGrid()
 
+	_, solvedGrid := recursivelySolveGrid(*this, true)
 	//make sure random changes
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 
 	nbRepetition := 0
 	for nbRepetition != howManyValues{
-		currentValue := r1.Intn(9) + 1
 		x := r1.Intn(9)
 		y := r1.Intn(9)
 
-		addSuccessfull, _ := this.addSolvingNumber(currentValue, x, y, true)
+		addSuccessfull, _ := this.addSolvingNumber(solvedGrid.Values[y][x], x, y, true)
 		if addSuccessfull{
 			nbRepetition++
 		}
@@ -115,17 +115,22 @@ func (this *Grid) emptyGrid(){
 }
 
 //solver for the grid
-func recursivelySolveGrid(grid Grid) (bool, Grid){
+func recursivelySolveGrid(grid Grid, randomly bool) (bool, Grid){
 	for y := range make([]int, 9){
 		for x := range make([]int, 9){
 			if grid.Values[y][x] == 0{
 				//fmt.Println("trying to fill ", x, y)
 				//var successVar []int
-				for solvingValueMinus := range make([]int, 9){
-					solvingValue := solvingValueMinus + 1 //because it is currently between 0 and 8, not 1 and 9
+
+				arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+				if randomly{
+					shuffle(arrayIter)
+				}
+
+				for _, solvingValue := range arrayIter{
 					addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
 					if addSuccessfull{
-						isSolved, solvedGrid := recursivelySolveGrid(newGrid)
+						isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly)
 						if isSolved{
 							return true, solvedGrid
 						}
@@ -149,6 +154,18 @@ func intInSlice(a int, list [9]int) bool {
 	return false
 }
 
+//helper function to shuffle an array
+func shuffle(vals []int){
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	for len(vals) > 0 {
+		n := len(vals)
+		randIndex := r.Intn(n)
+		vals[n-1], vals[randIndex] = vals[randIndex], vals[n-1]
+		vals = vals[:n-1]
+	}
+}
+
+
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
@@ -163,18 +180,15 @@ func programMain()  {
 		{0, 4, 0, 1, 8, 0, 9, 0, 6},
 	}}
 
-	_, nextGrid := currentGrid.addSolvingNumber(9, 2, 6, false)
-
 	currentGrid.prettyPrint()
-	nextGrid.prettyPrint()
 
-	//currentGrid.fillGrid(30)
-	//currentGrid.prettyPrint()
-
-	_, solvedGrid := recursivelySolveGrid(currentGrid)
+	_, solvedGrid := recursivelySolveGrid(currentGrid, false)
 	solvedGrid.prettyPrint()
 
-	//bestGrid.prettyPrint()
+	currentGrid.fillGrid(10)
+	currentGrid.prettyPrint()
+	_, solvedGrid = recursivelySolveGrid(currentGrid, false)
+	solvedGrid.prettyPrint()
 }
 
 func main(){
