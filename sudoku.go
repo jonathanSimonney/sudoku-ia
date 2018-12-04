@@ -13,9 +13,17 @@ import (
 	"time"
 )
 
+// structure for a possibility
+type Possibility struct{
+	Numbers []int
+	X int
+	Y int
+}
+
 //structure for the grid
 type Grid struct{
 	Values [9][9]int
+	Possibilities []Possibility
 }
 
 //some methods to interact with our grid
@@ -87,6 +95,7 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal boo
 		this.Values[y][x] = solving
 		return true, *this
 	}else{
+		copiedGrid.Possibilities = copiedGrid.Possibilities[:len(copiedGrid.Possibilities)-1]
 		copiedGrid.Values[y][x] = solving
 		return true, copiedGrid
 	}
@@ -118,7 +127,7 @@ func (this *Grid) prettyPrint(){
 func (this *Grid) fillGrid(howManyValues int){
 	this.emptyGrid()
 
-	_, solvedGrid := recursivelySolveGrid(*this, true)
+	_, solvedGrid := recursivelySolveGrid(*this, true, true)
 	//make sure random changes
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
@@ -144,46 +153,40 @@ func (this *Grid) emptyGrid(){
 	}
 }
 
-//a helper to get the coords AND the list of elems of the best cell
-func (this *Grid) getBestBoxToCheck() (x int, y int, legalValues []int, isSolved bool){
-	bestX := -1
-	bestY := -1
-	bestArrayValues := make([]int, 10)
-	isSolved = true
-
+//a helper to fill the possibles list for our grid
+func (this *Grid) preparePossibles(){
 	for y := range make([]int, 9){
 		for x := range make([]int, 9){
-			newArrayValues := this.getLegalNumbersAtPos(x, y)
-			if len(newArrayValues) < len(bestArrayValues) && len(newArrayValues) != 0{
-				bestX = x
-				bestY = y
-				bestArrayValues = newArrayValues
-				isSolved = false
-			}
-			if this.Values[y][x] == 0{//we won't say it is solved if there is a 0 in the grid
-				isSolved = false
+			if this.Values[y][x] == 0{//because otherwhise there wouldn't be any possibility.
+				this.Possibilities = append(this.Possibilities, Possibility{X: x, Y: y, Numbers: this.getLegalNumbersAtPos(x, y)})
 			}
 		}
 	}
+}
 
-	//fmt.Println(bestX, bestY, bestArrayValues, isSolved)
+//a helper to get the coords AND the list of elems of the best cell
+func (this *Grid) getNextPossibility() (x int, y int, legalValues []int, isSolved bool){
+	possibilityNumberLeft := len(this.Possibilities)
 
-	return bestX, bestY, bestArrayValues, isSolved
+	if possibilityNumberLeft == 0{//there isn't any possibility left
+		return -1, -1, []int{}, true
+	}
+
+	nextPossibility := this.Possibilities[possibilityNumberLeft - 1]
+
+	return nextPossibility.X, nextPossibility.Y, nextPossibility.Numbers, false
 }
 
 //solver for the grid
-func recursivelySolveGrid(grid Grid, randomly bool) (isSolved bool, solvedGrid Grid){
-	x, y, arrayIter, isSolved := grid.getBestBoxToCheck()
+func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bool, solvedGrid Grid){
+	if firstTime{
+		grid.preparePossibles()
+	}
+	x, y, arrayIter, isSolved := grid.getNextPossibility()
 
-	//grid.prettyPrint()
-
-	//grid.prettyPrint()
-	//fmt.Println(x, y, arrayIter, isSolved)
 	//if the sudoku is already filled, nothing to do
 	if isSolved{
 		return true, grid
-	}else if x == -1{//if no new valid x could be found...
-		return false, grid
 	}
 
 	//shuffle the array of numbers to test in case the user wants random
@@ -195,7 +198,7 @@ func recursivelySolveGrid(grid Grid, randomly bool) (isSolved bool, solvedGrid G
 	for _, solvingValue := range arrayIter{
 		addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
 		if addSuccessfull{
-			isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly)
+			isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly, false)
 			if isSolved{
 				return true, solvedGrid
 			}
@@ -247,8 +250,8 @@ func programMain()  {
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 1, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 6, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -258,15 +261,15 @@ func programMain()  {
 	currentGrid.prettyPrint()
 
 	locBegin := time.Now()
-	_, solvedGrid := recursivelySolveGrid(currentGrid, false)
+	_, solvedGrid := recursivelySolveGrid(currentGrid, false, true)
 	fmt.Println(time.Since(locBegin))
 
 
 	solvedGrid.prettyPrint()
-	//currentGrid.fillGrid(5)
-	//currentGrid.prettyPrint()
-	//_, solvedGrid := recursivelySolveGrid(currentGrid, false)
-	//solvedGrid.prettyPrint()
+	currentGrid.fillGrid(5)
+	currentGrid.prettyPrint()
+	_, solvedGrid = recursivelySolveGrid(currentGrid, false, true)
+	solvedGrid.prettyPrint()
 }
 
 func main(){
