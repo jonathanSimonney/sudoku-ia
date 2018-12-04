@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
-	"log"
+	//"log"
 	"math/rand"
-	"os"
-	"runtime"
-	"runtime/pprof"
+	//"os"
+	//"runtime"
+	//"runtime/pprof"
 	"time"
 )
 
@@ -46,6 +46,22 @@ func (this *Grid) getIncludingSets(x int, y int) ([9]int, [9]int, [9]int){
 	}
 
 	return rowRet, colRet, squareRet
+}
+
+//a getter of all the legals numbers at a given position
+func (this *Grid) getLegalNumbersAtPos(x int, y int)[]int{
+	var legalValues []int
+
+	arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	rowForbidden, colForbidden, squareForbidden := this.getIncludingSets(x, y)
+
+	for _, solvingValue := range arrayIter{
+		if !intInSlice(solvingValue, rowForbidden) && !intInSlice(solvingValue, colForbidden) && !intInSlice(solvingValue, squareForbidden){
+			legalValues = append(legalValues, solvingValue)
+		}
+	}
+
+	return legalValues
 }
 
 //an adder of number which checks if the number can be added
@@ -123,7 +139,7 @@ func recursivelySolveGrid(grid Grid, randomly bool, currentIndex int) (bool, Gri
 		x := (currentIndex - 1) % 9
 
 		if grid.Values[y][x] == 0{
-			arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+			arrayIter := grid.getLegalNumbersAtPos(x, y)
 			if randomly{
 				shuffle(arrayIter)
 			}
@@ -182,37 +198,41 @@ func programMain()  {
 
 	currentGrid.prettyPrint()
 
+	locBegin := time.Now()
 	_, solvedGrid := recursivelySolveGrid(currentGrid, false, 0)
+	fmt.Println(time.Since(locBegin))
+
+
 	solvedGrid.prettyPrint()
 
-	currentGrid.fillGrid(10)
-	currentGrid.prettyPrint()
-	_, solvedGrid = recursivelySolveGrid(currentGrid, false, 0)
-	solvedGrid.prettyPrint()
+	//currentGrid.fillGrid(5)
+	//currentGrid.prettyPrint()
+	//_, solvedGrid := recursivelySolveGrid(currentGrid, false, 0)
+	//solvedGrid.prettyPrint()
 }
 
 func main(){
-	f, err := os.Create("perf_cpu.perf")
-	if err != nil {
-		log.Fatal("could not create CPU profile: ", err)
-	}
-	if err := pprof.StartCPUProfile(f); err != nil {
-		log.Fatal("could not start CPU profile: ", err)
-	}
-	defer pprof.StopCPUProfile()
-
+	//f, err := os.Create("perf_cpu.perf")
+	//if err != nil {
+	//	log.Fatal("could not create CPU profile: ", err)
+	//}
+	//if err := pprof.StartCPUProfile(f); err != nil {
+	//	log.Fatal("could not start CPU profile: ", err)
+	//}
+	//defer pprof.StopCPUProfile()
+	//
 	begin := time.Now()
 	programMain()
 	fmt.Println(time.Since(begin))
-
-
-	f, err = os.Create("mem_profile.perf")
-	if err != nil {
-		log.Fatal("could not create memory profile: ", err)
-	}
-	runtime.GC() // get up-to-date statistics
-	if err := pprof.WriteHeapProfile(f); err != nil {
-		log.Fatal("could not write memory profile: ", err)
-	}
-	f.Close()
+	//
+	//
+	//f, err = os.Create("mem_profile.perf")
+	//if err != nil {
+	//	log.Fatal("could not create memory profile: ", err)
+	//}
+	//runtime.GC() // get up-to-date statistics
+	//if err := pprof.WriteHeapProfile(f); err != nil {
+	//	log.Fatal("could not write memory profile: ", err)
+	//}
+	//f.Close()
 }
