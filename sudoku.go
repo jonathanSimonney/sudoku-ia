@@ -14,22 +14,19 @@ import (
 //structure for the grid
 type Grid struct{
 	Values [9][9]int
+	//SolvedValues [9][9]int
 }
 
 //some methods to interact with our grid
 
 //a getter to get the row, the column and the square of two given coords. Couldn't find a really fitting name...
-func (this *Grid) getIncludingSets(x int, y int) ([9]int, [9]int, [9]int){
-	rowRet := this.Values[y]
+func (this *Grid) getIncludingSets(x int, y int) (rowRet [9]int, colRet [9]int, squareRet [9]int){
+	rowRet = this.Values[y]
 
 	//let's get the whole column as a slice
-	var colRet [9]int
-
 	for index, row := range this.Values{
 		colRet[index] = row[x]
 	}
-
-	var squareRet [9]int
 
 	squareIndex := 0
 
@@ -49,8 +46,11 @@ func (this *Grid) getIncludingSets(x int, y int) ([9]int, [9]int, [9]int){
 }
 
 //a getter of all the legals numbers at a given position
-func (this *Grid) getLegalNumbersAtPos(x int, y int)[]int{
-	var legalValues []int
+func (this *Grid) getLegalNumbersAtPos(x int, y int)(legalValues []int){
+	//because no value can be legal if the box is already filled
+	if this.Values[y][x] != 0{
+		return legalValues
+	}
 
 	arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	rowForbidden, colForbidden, squareForbidden := this.getIncludingSets(x, y)
@@ -65,7 +65,7 @@ func (this *Grid) getLegalNumbersAtPos(x int, y int)[]int{
 }
 
 //an adder of number which checks if the number can be added
-func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal bool) (bool, Grid){
+func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal bool) (isValid bool, modifiedGrid Grid){
 	//first we'll copy the current grid to get a new one
 	copiedGrid := Grid{}
 
@@ -104,7 +104,7 @@ func (this *Grid) prettyPrint(){
 func (this *Grid) fillGrid(howManyValues int){
 	this.emptyGrid()
 
-	_, solvedGrid := recursivelySolveGrid(*this, true, 0)
+	_, solvedGrid := recursivelySolveGrid(*this, true)
 	//make sure random changes
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
@@ -130,34 +130,69 @@ func (this *Grid) emptyGrid(){
 	}
 }
 
-//solver for the grid
-func recursivelySolveGrid(grid Grid, randomly bool, currentIndex int) (bool, Grid){
-	for currentIndex != 81{
-		currentIndex ++
+//a helper to get the coords AND the list of elems of the best cell
+func (this *Grid) getBestBoxToCheck() (x int, y int, legalValues []int, isSolved bool){
+	bestX := -1
+	bestY := -1
+	bestArrayValues := make([]int, 10)
+	isSolved = true
 
-		y := (currentIndex - 1) / 9
-		x := (currentIndex - 1) % 9
-
-		if grid.Values[y][x] == 0{
-			arrayIter := grid.getLegalNumbersAtPos(x, y)
-			if randomly{
-				shuffle(arrayIter)
+	for y := range make([]int, 9){
+		for x := range make([]int, 9){
+			newArrayValues := this.getLegalNumbersAtPos(x, y)
+			if len(newArrayValues) < len(bestArrayValues) && len(newArrayValues) != 0{
+				bestX = x
+				bestY = y
+				bestArrayValues = newArrayValues
+				isSolved = false
 			}
-
-			for _, solvingValue := range arrayIter{
-				addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
-				if addSuccessfull{
-					isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly, currentIndex)
-					if isSolved{
-						return true, solvedGrid
-					}
-				}
+			if this.Values[y][x] == 0{//we won't say it is solved if there is a 0 in the grid
+				isSolved = false
 			}
-			return false, grid
 		}
 	}
 
-	return true, grid
+	//fmt.Println(bestX, bestY, bestArrayValues, isSolved)
+
+	return bestX, bestY, bestArrayValues, isSolved
+}
+
+//solver for the grid
+func recursivelySolveGrid(grid Grid, randomly bool) (isSolved bool, solvedGrid Grid){
+	x, y, arrayIter, isSolved := grid.getBestBoxToCheck()
+
+	//grid.prettyPrint()
+
+	//grid.prettyPrint()
+	//fmt.Println(x, y, arrayIter, isSolved)
+	//if the sudoku is already filled, nothing to do
+	if isSolved{
+		return true, grid
+	}else if x == -1{//if no new valid x could be found...
+		return false, grid
+	}
+
+	//shuffle the array of numbers to test in case the user wants random
+	if randomly{
+		shuffle(arrayIter)
+	}
+
+	//test each value in the array of valid numbers.
+	for _, solvingValue := range arrayIter{
+		addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
+		if addSuccessfull{
+			isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly)
+			if isSolved{
+				return true, solvedGrid
+			}
+		}
+	}
+
+	//fmt.Println("sorry...")
+	//if no value was sent, then the grid can't be solved.
+	return false, grid
+
+
 }
 
 //helper function to check if int is in list
@@ -185,29 +220,38 @@ func shuffle(vals []int){
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
-		{4, 0, 2, 0, 1, 7, 0, 3, 0},
-		{3, 0, 0, 0, 0, 0, 0, 0, 1},
-		{0, 0, 0, 0, 9, 0, 6, 0, 0},
-		{0, 2, 0, 0, 4, 0, 7, 0, 8},
-		{0, 0, 4, 0, 0, 0, 5, 0, 0},
-		{1, 0, 7, 0, 6, 0, 0, 9, 0},
-		{0, 0, 6, 0, 3, 0, 0, 0, 0},
-		{9, 0, 0, 0, 0, 0, 0, 0, 3},
-		{0, 4, 0, 1, 8, 0, 9, 0, 6},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
+		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
+		//{0, 0, 0, 5, 0, 7, 0, 0, 0},
+		//{0, 0, 4, 0, 0, 0, 1, 0, 0},
+		//{0, 9, 0, 0, 0, 0, 0, 0, 0},
+		//{5, 0, 0, 0, 0, 0, 0, 7, 3},
+		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
+
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 1, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}}
 
 	currentGrid.prettyPrint()
 
 	locBegin := time.Now()
-	_, solvedGrid := recursivelySolveGrid(currentGrid, false, 0)
+	_, solvedGrid := recursivelySolveGrid(currentGrid, false)
 	fmt.Println(time.Since(locBegin))
 
 
 	solvedGrid.prettyPrint()
-
 	//currentGrid.fillGrid(5)
 	//currentGrid.prettyPrint()
-	//_, solvedGrid := recursivelySolveGrid(currentGrid, false, 0)
+	//_, solvedGrid := recursivelySolveGrid(currentGrid, false)
 	//solvedGrid.prettyPrint()
 }
 
