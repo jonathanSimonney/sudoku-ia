@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
+	"strings"
+
 	//"log"
 	"math/rand"
 	//"os"
@@ -14,7 +16,6 @@ import (
 //structure for the grid
 type Grid struct{
 	Values [9][9]int
-	//SolvedValues [9][9]int
 }
 
 //some methods to interact with our grid
@@ -93,8 +94,21 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal boo
 
 //a pretty print
 func (this *Grid) prettyPrint(){
-	for _, row := range this.Values {
-		fmt.Println(row)
+	fmt.Println(strings.Repeat("_ ", 13))
+	for indexY, row := range this.Values {
+		fmt.Print("|")
+		for indexX, number := range row{
+			fmt.Print(" ", number)
+			if (indexX + 1) % 3 == 0{
+				fmt.Print(" |")
+			}
+		}
+		if (indexY + 1) % 3 == 0{
+			fmt.Print("\n")
+			fmt.Println(strings.Repeat("_ ", 13))
+		}else{
+			fmt.Print("\n")
+		}
 	}
 
 	fmt.Println("*************************************************************************************************")
