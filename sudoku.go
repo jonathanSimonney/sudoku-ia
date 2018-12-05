@@ -93,13 +93,13 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal boo
 		return false, copiedGrid
 	}
 
-	rowForbidden, colForbidden, squareForbidden := copiedGrid.getIncludingSets(x, y)
-
-	if intInSlice(solving, rowForbidden) || intInSlice(solving, colForbidden) || intInSlice(solving, squareForbidden){
-		return false, copiedGrid
-	}
-
 	if modifyOriginal{
+		rowForbidden, colForbidden, squareForbidden := copiedGrid.getIncludingSets(x, y)
+
+		if intInSlice(solving, rowForbidden) || intInSlice(solving, colForbidden) || intInSlice(solving, squareForbidden){
+			return false, copiedGrid
+		}
+
 		this.Values[y][x] = solving
 		return true, *this
 	}else{
@@ -194,6 +194,11 @@ func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bo
 	}
 	x, y, arrayIter, isSolved := grid.getNextPossibility()
 
+	if x != -1{
+		arrayIter = grid.getLegalNumbersAtPos(x, y)
+	}
+
+
 	//if the sudoku is already filled, nothing to do
 	if isSolved{
 		return true, grid
@@ -247,25 +252,25 @@ func shuffle(vals []int){
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
-		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
-		//{0, 0, 0, 5, 0, 7, 0, 0, 0},
-		//{0, 0, 4, 0, 0, 0, 1, 0, 0},
-		//{0, 9, 0, 0, 0, 0, 0, 0, 0},
-		//{5, 0, 0, 0, 0, 0, 0, 7, 3},
-		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 3, 0, 8, 5},
+		{0, 0, 1, 0, 2, 0, 0, 0, 0},
+		{0, 0, 0, 5, 0, 7, 0, 0, 0},
+		{0, 0, 4, 0, 0, 0, 1, 0, 0},
+		{0, 9, 0, 0, 0, 0, 0, 0, 0},
+		{5, 0, 0, 0, 0, 0, 0, 7, 3},
+		{0, 0, 2, 0, 1, 0, 0, 0, 0},
+		{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 6, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 6, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}}
 
 	currentGrid.prettyPrint()
