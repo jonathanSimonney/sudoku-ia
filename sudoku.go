@@ -42,8 +42,8 @@ func (this *Grid) getIncludingSets(x int, y int, returnValid bool) (mergedRet []
 		mergedRet = []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	}
 
-	for _, forbidden := range this.Values[y]{
-		if forbidden != 0{
+	for index, forbidden := range this.Values[y]{
+		if forbidden != 0 && index != x{
 			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
 		}
 	}
@@ -53,9 +53,9 @@ func (this *Grid) getIncludingSets(x int, y int, returnValid bool) (mergedRet []
 	}
 
 	//let's get the whole column as a slice
-	for _, row := range this.Values{
+	for index, row := range this.Values{
 		forbidden := row[x]
-		if forbidden != 0{
+		if forbidden != 0 && index != y{
 			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
 		}
 	}
@@ -71,8 +71,10 @@ func (this *Grid) getIncludingSets(x int, y int, returnValid bool) (mergedRet []
 	//then get all the numbers in this square
 	for xIncrement, _ := range make([]int, 3){
 		for yIncrement, _ := range make([]int, 3){
-			forbidden := this.Values[ySquareStart + yIncrement][xSquareStart + xIncrement]
-			if forbidden != 0{
+			yIndex := ySquareStart + yIncrement
+			xIndex := xSquareStart + xIncrement
+			forbidden := this.Values[yIndex][xIndex]
+			if forbidden != 0 && (xIndex != x || yIndex != y){
 				mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
 			}
 		}
@@ -174,7 +176,7 @@ func (this *Grid) emptyGrid(){
 }
 
 //a helper to fill the possibles list for our grid
-func (this *Grid) preparePossibles(){
+func (this *Grid) prepare() (isValid bool){
 	for y := range make([]int, 9){
 		for x := range make([]int, 9){
 			if this.Values[y][x] == 0{//because otherwhise there wouldn't be any possibility.
@@ -184,11 +186,18 @@ func (this *Grid) preparePossibles(){
 				}else{
 					this.Possibilities = append(this.Possibilities, Possibility{X: x, Y: y, Numbers: legalNumbers})
 				}
+			}else{
+				forbiddenValues := this.getIncludingSets(x, y, false)
+				if intInSlice(this.Values[y][x], forbiddenValues){
+					return false
+				}
 			}
 		}
 	}
 
 	sort.Sort(byPossibility(this.Possibilities))
+
+	return true
 }
 
 //a helper to get the coords AND the list of elems of the best cell
@@ -207,7 +216,10 @@ func (this *Grid) getNextPossibility() (x int, y int, legalValues []int, isSolve
 //solver for the grid
 func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bool, solvedGrid Grid){
 	if firstTime{
-		grid.preparePossibles()
+		validGrid := grid.prepare()
+		if !validGrid{
+			return false, grid
+		}
 	}
 	x, y, arrayIter, isSolved := grid.getNextPossibility()
 
