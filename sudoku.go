@@ -36,16 +36,33 @@ type Grid struct{
 
 //some methods to interact with our grid
 
-//a getter to get the row, the column and the square of two given coords. Couldn't find a really fitting name...
-func (this *Grid) getIncludingSets(x int, y int) (rowRet [9]int, colRet [9]int, squareRet [9]int){
-	rowRet = this.Values[y]
-
-	//let's get the whole column as a slice
-	for index, row := range this.Values{
-		colRet[index] = row[x]
+//a getter to get the valid or invalid values at a given position
+func (this *Grid) getIncludingSets(x int, y int, returnValid bool) (mergedRet []int){
+	if returnValid{
+		mergedRet = []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	}
 
-	squareIndex := 0
+	for _, forbidden := range this.Values[y]{
+		if forbidden != 0{
+			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
+		}
+	}
+
+	if (len(mergedRet) == 0 && returnValid) || (len(mergedRet) == 9 && !returnValid){
+		return mergedRet
+	}
+
+	//let's get the whole column as a slice
+	for _, row := range this.Values{
+		forbidden := row[x]
+		if forbidden != 0{
+			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
+		}
+	}
+
+	if (len(mergedRet) == 0 && returnValid) || (len(mergedRet) == 9 && !returnValid){
+		return mergedRet
+	}
 
 	//first, know which square is targetted
 	xSquareStart := (x / 3) * 3
@@ -54,12 +71,14 @@ func (this *Grid) getIncludingSets(x int, y int) (rowRet [9]int, colRet [9]int, 
 	//then get all the numbers in this square
 	for xIncrement, _ := range make([]int, 3){
 		for yIncrement, _ := range make([]int, 3){
-			squareRet[squareIndex] = this.Values[ySquareStart + yIncrement][xSquareStart + xIncrement]
-			squareIndex++
+			forbidden := this.Values[ySquareStart + yIncrement][xSquareStart + xIncrement]
+			if forbidden != 0{
+				mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
+			}
 		}
 	}
 
-	return rowRet, colRet, squareRet
+	return mergedRet
 }
 
 //a getter of all the legals numbers at a given position
@@ -69,14 +88,7 @@ func (this *Grid) getLegalNumbersAtPos(x int, y int)(legalValues []int){
 		return legalValues
 	}
 
-	arrayIter := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
-	rowForbidden, colForbidden, squareForbidden := this.getIncludingSets(x, y)
-
-	for _, solvingValue := range arrayIter{
-		if !intInSlice(solvingValue, rowForbidden) && !intInSlice(solvingValue, colForbidden) && !intInSlice(solvingValue, squareForbidden){
-			legalValues = append(legalValues, solvingValue)
-		}
-	}
+	legalValues = this.getIncludingSets(x, y, true)
 
 	return legalValues
 }
@@ -94,9 +106,9 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal boo
 	}
 
 	if modifyOriginal{
-		rowForbidden, colForbidden, squareForbidden := copiedGrid.getIncludingSets(x, y)
+		invalidValues := copiedGrid.getIncludingSets(x, y, false)
 
-		if intInSlice(solving, rowForbidden) || intInSlice(solving, colForbidden) || intInSlice(solving, squareForbidden){
+		if intInSlice(solving, invalidValues){
 			return false, copiedGrid
 		}
 
@@ -166,7 +178,12 @@ func (this *Grid) preparePossibles(){
 	for y := range make([]int, 9){
 		for x := range make([]int, 9){
 			if this.Values[y][x] == 0{//because otherwhise there wouldn't be any possibility.
-				this.Possibilities = append(this.Possibilities, Possibility{X: x, Y: y, Numbers: this.getLegalNumbersAtPos(x, y)})
+			    legalNumbers := this.getLegalNumbersAtPos(x, y)
+			    if len(legalNumbers) == 1{
+			    	this.Values[y][x] = legalNumbers[0]
+				}else{
+					this.Possibilities = append(this.Possibilities, Possibility{X: x, Y: y, Numbers: legalNumbers})
+				}
 			}
 		}
 	}
@@ -194,6 +211,7 @@ func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bo
 	}
 	x, y, arrayIter, isSolved := grid.getNextPossibility()
 
+	//it avoids to check if the number is valid in addSolvingNumber...
 	if x != -1{
 		arrayIter = grid.getLegalNumbersAtPos(x, y)
 	}
@@ -228,13 +246,37 @@ func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bo
 }
 
 //helper function to check if int is in list
-func intInSlice(a int, list [9]int) bool {
+func intInSlice(a int, list []int) bool {
 	for _, b := range list {
 		if b == a {
 			return true
 		}
 	}
 	return false
+}
+
+//helper function to suppress the first elem found in a list
+func suppressFirstFromSlice(a int, list []int) (filteredList []int) {
+	for index, b := range list {
+		if b == a {
+			list[index] = list[len(list)-1]
+			return list[:len(list)-1]
+		}
+	}
+	return list
+}
+
+//a helper to add or remove from a slice if elem is or isn't in there
+func addOrRemoveFromUniqSlice(originalSlice []int, isFilling bool, newValue int) (treatedValues []int){
+	if !isFilling{//we're emptying the array
+		originalSlice = suppressFirstFromSlice(newValue, originalSlice)
+	}else{
+		if !intInSlice(newValue, originalSlice){
+			originalSlice = append(originalSlice, newValue)
+		}
+	}
+
+	return originalSlice
 }
 
 //helper function to shuffle an array
