@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
+	"sort"
 	"strings"
 
 	//"log"
@@ -12,6 +13,13 @@ import (
 	//"runtime/pprof"
 	"time"
 )
+
+type byPossibility []Possibility
+
+func (a byPossibility) Len() int           { return len(a) }
+func (a byPossibility) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byPossibility) Less(i, j int) bool { return len(a[i].Numbers) < len(a[j].Numbers) }
+
 
 // structure for a possibility
 type Possibility struct{
@@ -95,7 +103,7 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal boo
 		this.Values[y][x] = solving
 		return true, *this
 	}else{
-		copiedGrid.Possibilities = copiedGrid.Possibilities[:len(copiedGrid.Possibilities)-1]
+		copiedGrid.Possibilities = copiedGrid.Possibilities[1:]
 		copiedGrid.Values[y][x] = solving
 		return true, copiedGrid
 	}
@@ -162,6 +170,8 @@ func (this *Grid) preparePossibles(){
 			}
 		}
 	}
+
+	sort.Sort(byPossibility(this.Possibilities))
 }
 
 //a helper to get the coords AND the list of elems of the best cell
@@ -172,7 +182,7 @@ func (this *Grid) getNextPossibility() (x int, y int, legalValues []int, isSolve
 		return -1, -1, []int{}, true
 	}
 
-	nextPossibility := this.Possibilities[possibilityNumberLeft - 1]
+	nextPossibility := this.Possibilities[0]
 
 	return nextPossibility.X, nextPossibility.Y, nextPossibility.Numbers, false
 }
@@ -266,10 +276,10 @@ func programMain()  {
 
 
 	solvedGrid.prettyPrint()
-	currentGrid.fillGrid(5)
-	currentGrid.prettyPrint()
-	_, solvedGrid = recursivelySolveGrid(currentGrid, false, true)
-	solvedGrid.prettyPrint()
+	//currentGrid.fillGrid(5)
+	//currentGrid.prettyPrint()
+	//_, solvedGrid = recursivelySolveGrid(currentGrid, false, true)
+	//solvedGrid.prettyPrint()
 }
 
 func main(){
