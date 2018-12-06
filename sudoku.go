@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jinzhu/copier"
 	"sort"
 	"strings"
 
@@ -42,21 +41,15 @@ func (this *Grid) getIncludingSets(x int, y int, returnValid bool) (mergedRet []
 		mergedRet = []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	}
 
-	for index, forbidden := range this.Values[y]{
-		if forbidden != 0 && index != x{
-			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
+	for i := 0; i < 9; i++{
+		inLineForbidden := this.Values[y][i]
+		if inLineForbidden != 0 && i != x{
+			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, inLineForbidden)
 		}
-	}
 
-	if (len(mergedRet) == 0 && returnValid) || (len(mergedRet) == 9 && !returnValid){
-		return mergedRet
-	}
-
-	//let's get the whole column as a slice
-	for index, row := range this.Values{
-		forbidden := row[x]
-		if forbidden != 0 && index != y{
-			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
+		inColumnForbidden := this.Values[i][x]
+		if inColumnForbidden != 0 && i != y{
+			mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, inColumnForbidden)
 		}
 	}
 
@@ -68,11 +61,12 @@ func (this *Grid) getIncludingSets(x int, y int, returnValid bool) (mergedRet []
 	xSquareStart := (x / 3) * 3
 	ySquareStart := (y / 3) * 3
 
+	xSquareEnd := ((x / 3) * 3) + 3
+	ySquareEnd := ((y / 3) * 3) + 3
+
 	//then get all the numbers in this square
-	for xIncrement, _ := range make([]int, 3){
-		for yIncrement, _ := range make([]int, 3){
-			yIndex := ySquareStart + yIncrement
-			xIndex := xSquareStart + xIncrement
+	for yIndex := ySquareStart; yIndex < ySquareEnd; yIndex++{
+		for xIndex := xSquareStart; xIndex < xSquareEnd; xIndex++{
 			forbidden := this.Values[yIndex][xIndex]
 			if forbidden != 0 && (xIndex != x || yIndex != y){
 				mergedRet = addOrRemoveFromUniqSlice(mergedRet, !returnValid, forbidden)
@@ -96,30 +90,28 @@ func (this *Grid) getLegalNumbersAtPos(x int, y int)(legalValues []int){
 }
 
 //an adder of number which checks if the number can be added
-func (this *Grid) addSolvingNumber(solving int, x int, y int, modifyOriginal bool) (isValid bool, modifiedGrid Grid){
+func (this *Grid) addSolvingNumber(solving int, x int, y int, trustSolving bool) (isValid bool, modifiedGrid Grid){
 	//first we'll copy the current grid to get a new one
-	copiedGrid := Grid{}
-
-	copier.Copy(&copiedGrid, &this)
+	copiedGrid := *this
 
 	//check the box is empty
-	if copiedGrid.Values[y][x]  != 0{
-		return false, copiedGrid
+	if this.Values[y][x]  != 0{
+		return false, *this
 	}
 
-	if modifyOriginal{
-		invalidValues := copiedGrid.getIncludingSets(x, y, false)
+	if trustSolving{
+		copiedGrid.Possibilities = this.Possibilities[1:]
+		copiedGrid.Values[y][x] = solving
+		return true, copiedGrid
+	}else{
+		invalidValues := this.getIncludingSets(x, y, false)
 
 		if intInSlice(solving, invalidValues){
-			return false, copiedGrid
+			return false, *this
 		}
 
 		this.Values[y][x] = solving
 		return true, *this
-	}else{
-		copiedGrid.Possibilities = copiedGrid.Possibilities[1:]
-		copiedGrid.Values[y][x] = solving
-		return true, copiedGrid
 	}
 }
 
@@ -159,7 +151,7 @@ func (this *Grid) fillGrid(howManyValues int){
 		x := r1.Intn(9)
 		y := r1.Intn(9)
 
-		addSuccessfull, _ := this.addSolvingNumber(solvedGrid.Values[y][x], x, y, true)
+		addSuccessfull, _ := this.addSolvingNumber(solvedGrid.Values[y][x], x, y, false)
 		if addSuccessfull{
 			nbRepetition++
 		}
@@ -216,10 +208,13 @@ func (this *Grid) getNextPossibility() (x int, y int, legalValues []int, isSolve
 //solver for the grid
 func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bool, solvedGrid Grid){
 	if firstTime{
+		prepareBegin := time.Now()
 		validGrid := grid.prepare()
 		if !validGrid{
 			return false, grid
 		}
+		fmt.Println("grid prepared in ")
+		fmt.Println(time.Since(prepareBegin))
 	}
 	x, y, arrayIter, isSolved := grid.getNextPossibility()
 
@@ -241,13 +236,14 @@ func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool) (isSolved bo
 
 	//test each value in the array of valid numbers.
 	for _, solvingValue := range arrayIter{
-		addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, false)
+		addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, true)
 		if addSuccessfull{
 			isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly, false)
 			if isSolved{
 				return true, solvedGrid
 			}
 		}
+		grid.Values[y][x] = 0
 	}
 
 	//fmt.Println("sorry...")
@@ -306,25 +302,82 @@ func shuffle(vals []int){
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 3, 0, 8, 5},
-		{0, 0, 1, 0, 2, 0, 0, 0, 0},
-		{0, 0, 0, 5, 0, 7, 0, 0, 0},
-		{0, 0, 4, 0, 0, 0, 1, 0, 0},
-		{0, 9, 0, 0, 0, 0, 0, 0, 0},
-		{5, 0, 0, 0, 0, 0, 0, 7, 3},
-		{0, 0, 2, 0, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 4, 0, 0, 0, 9},
+		//1 second
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
+		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
+		//{0, 0, 0, 5, 0, 7, 0, 0, 0},
+		//{0, 0, 4, 0, 0, 0, 1, 0, 0},
+		//{0, 9, 0, 0, 0, 0, 0, 0, 0},
+		//{5, 0, 0, 0, 0, 0, 0, 7, 3},
+		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
+		//10 - 13 seconds
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 7, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{1, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 8, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 5, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+		//nath long grid 12 minutes!!!
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 6, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 1, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+		//invalid grid from start OK
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 1, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 1, 0, 0, 0, 0, 0, 0, 0},
+
+		//insolvable simple grid CHECK
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 5},
+		//{0, 0, 0, 0, 0, 0, 1, 0, 0},
+		//{0, 0, 0, 0, 0, 5, 0, 0, 0},
+		//{0, 5, 0, 0, 0, 0, 0, 0, 0},
+
+		//insolvable originally long grid FALSE!!!
+		{7, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 7, 0, 0},
+		{0, 0, 0, 0, 1, 2, 0, 0, 0},
+		{0, 0, 0, 7, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 8, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 5, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+		//hardest in the world : 821 mSec
+		//{1, 0, 0, 0, 0, 7, 0, 9, 0},
+		//{0, 3, 0, 0, 2, 0, 0, 0, 8},
+		//{0, 0, 9, 6, 0, 0, 5, 0, 0},
+		//{0, 0, 5, 3, 0, 0, 9, 0, 0},
+		//{0, 1, 0, 0, 8, 0, 0, 0, 2},
+		//{6, 0, 0, 0, 0, 4, 0, 0, 0},
+		//{3, 0, 0, 0, 0, 0, 0, 1, 0},
+		//{0, 4, 0, 0, 0, 0, 0, 0, 7},
+		//{0, 0, 7, 0, 0, 0, 3, 0, 0},
 	}}
 
 	currentGrid.prettyPrint()

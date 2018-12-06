@@ -2,3 +2,5 @@
 *.perf
 sudoku
 *.svg
+*.pdf
+sudokuNath.go
