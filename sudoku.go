@@ -90,17 +90,14 @@ func (this *Grid) getLegalNumbersAtPos(x int, y int)(legalValues []int){
 
 //an adder of number which checks if the number can be added
 func (this *Grid) addSolvingNumber(solving int, x int, y int, trustSolving bool) (isValid bool, modifiedGrid Grid){
-	//first we'll copy the current grid to get a new one
-	copiedGrid := *this
-
 	//check the box is empty
 	if this.Values[y][x]  != 0{
 		return false, *this
 	}
 
 	if trustSolving{
-		copiedGrid.Values[y][x] = solving
-		return true, copiedGrid
+		this.Values[y][x] = solving
+		return true, *this
 	}else{
 		invalidValues := this.getIncludingSets(x, y, false)
 
@@ -187,7 +184,7 @@ func (this *Grid) prepare() (isValid bool){
 
 	//sort.Sort(byPossibility(this.Possibilities))
 
-	fmt.Println(this.Possibilities)
+	//fmt.Println(this.Possibilities)
 
 	return true
 }
@@ -303,26 +300,26 @@ func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
 		//20 - 30 second OR 1 second with sort
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
-		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
-		//{0, 0, 0, 5, 0, 7, 0, 0, 0},
-		//{0, 0, 4, 0, 0, 0, 1, 0, 0},
-		//{0, 9, 0, 0, 0, 0, 0, 0, 0},
-		//{5, 0, 0, 0, 0, 0, 0, 7, 3},
-		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 3, 0, 8, 5},
+		{0, 0, 1, 0, 2, 0, 0, 0, 0},
+		{0, 0, 0, 5, 0, 7, 0, 0, 0},
+		{0, 0, 4, 0, 0, 0, 1, 0, 0},
+		{0, 9, 0, 0, 0, 0, 0, 0, 0},
+		{5, 0, 0, 0, 0, 0, 0, 7, 3},
+		{0, 0, 2, 0, 1, 0, 0, 0, 0},
+		{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
 		//insolvable originally long grid 10 - 15 seconds OR infinite with sort
-		{7, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 7, 0, 0},
-		{0, 0, 0, 0, 1, 2, 0, 0, 0},
-		{0, 0, 0, 7, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 8, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 5, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{7, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
+		//{0, 0, 0, 0, 1, 2, 0, 0, 0},
+		//{0, 0, 0, 7, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{1, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 8, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 5, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 
 		//1 ms
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -368,7 +365,7 @@ func programMain()  {
 		//{0, 0, 0, 0, 0, 5, 0, 0, 0},
 		//{0, 5, 0, 0, 0, 0, 0, 0, 0},
 
-		//hardest in the world : 821 mSec
+		//hardest in the world : 3 mSec
 		//{1, 0, 0, 0, 0, 7, 0, 9, 0},
 		//{0, 3, 0, 0, 2, 0, 0, 0, 8},
 		//{0, 0, 9, 6, 0, 0, 5, 0, 0},
