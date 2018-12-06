@@ -99,7 +99,6 @@ func (this *Grid) addSolvingNumber(solving int, x int, y int, trustSolving bool)
 	}
 
 	if trustSolving{
-		//copiedGrid.Possibilities = this.Possibilities[1:]
 		copiedGrid.Values[y][x] = solving
 		return true, copiedGrid
 	}else{
@@ -187,6 +186,8 @@ func (this *Grid) prepare() (isValid bool){
 	}
 
 	//sort.Sort(byPossibility(this.Possibilities))
+
+	fmt.Println(this.Possibilities)
 
 	return true
 }
@@ -312,7 +313,7 @@ func programMain()  {
 		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
-		//insolvable originally long grid 15 - 20 seconds OR infinite without sort
+		//insolvable originally long grid 10 - 15 seconds OR infinite with sort
 		{7, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 7, 0, 0},
 		{0, 0, 0, 0, 1, 2, 0, 0, 0},
