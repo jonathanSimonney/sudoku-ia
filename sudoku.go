@@ -19,8 +19,6 @@ func (a byPossibility) Len() int           { return len(a) }
 func (a byPossibility) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byPossibility) Less(i, j int) bool { return len(a[i].Numbers) < len(a[j].Numbers) }
 
-var debugUgly bool
-
 // structure for a possibility
 type Possibility struct{
 	Numbers []int
@@ -278,7 +276,7 @@ func shuffle(vals []int){
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
-		//20 - 30 second OR 1 second with sort
+		//34 msecond with sort
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
 		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
@@ -289,7 +287,7 @@ func programMain()  {
 		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
-		//insolvable originally long grid 10 - 15 seconds OR infinite with sort
+		//24 ms
 		//{0, 0, 0, 7, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{1, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -300,7 +298,7 @@ func programMain()  {
 		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
 		//{0, 0, 0, 0, 1, 2, 0, 0, 0},
 
-		//1 ms
+		//3 ms
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -311,7 +309,7 @@ func programMain()  {
 		//{0, 0, 0, 0, 0, 0, 5, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 
-		//nath long grid 1 ms
+		//nath long grid 3 ms
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
@@ -322,7 +320,7 @@ func programMain()  {
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 
-		//invalid grid from start OK
+		//invalid grid from start 0.5 mS
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
@@ -333,30 +331,28 @@ func programMain()  {
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 1, 0, 0, 0, 0, 0, 0, 0},
 
-		//insolvable simple grid CHECK
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 5, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 5},
-		{0, 0, 0, 0, 0, 0, 1, 0, 0},
-		{0, 0, 0, 0, 0, 5, 0, 0, 0},
-		{0, 5, 0, 0, 0, 0, 0, 0, 0},
+		//insolvable simple grid 0.5 mS
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 5},
+		//{0, 0, 0, 0, 0, 0, 1, 0, 0},
+		//{0, 0, 0, 0, 0, 5, 0, 0, 0},
+		//{0, 5, 0, 0, 0, 0, 0, 0, 0},
 
-		//hardest in the world : 3 mSec
-		//{1, 0, 0, 0, 0, 7, 0, 9, 0},
-		//{0, 3, 0, 0, 2, 0, 0, 0, 8},
-		//{0, 0, 9, 6, 0, 0, 5, 0, 0},
-		//{0, 0, 5, 3, 0, 0, 9, 0, 0},
-		//{0, 1, 0, 0, 8, 0, 0, 0, 2},
-		//{6, 0, 0, 0, 0, 4, 0, 0, 0},
-		//{3, 0, 0, 0, 0, 0, 0, 1, 0},
-		//{0, 4, 0, 0, 0, 0, 0, 0, 7},
-		//{0, 0, 7, 0, 0, 0, 3, 0, 0},
+		//hardest in the world : 9 mSec
+		{1, 0, 0, 0, 0, 7, 0, 9, 0},
+		{0, 3, 0, 0, 2, 0, 0, 0, 8},
+		{0, 0, 9, 6, 0, 0, 5, 0, 0},
+		{0, 0, 5, 3, 0, 0, 9, 0, 0},
+		{0, 1, 0, 0, 8, 0, 0, 0, 2},
+		{6, 0, 0, 0, 0, 4, 0, 0, 0},
+		{3, 0, 0, 0, 0, 0, 0, 1, 0},
+		{0, 4, 0, 0, 0, 0, 0, 0, 7},
+		{0, 0, 7, 0, 0, 0, 3, 0, 0},
 	}}
-
-	debugUgly = false
 
 	currentGrid.prettyPrint()
 
@@ -366,10 +362,10 @@ func programMain()  {
 
 
 	solvedGrid.prettyPrint()
-	currentGrid.fillGrid(5)
-	currentGrid.prettyPrint()
-	_, solvedGrid = recursivelySolveGrid(currentGrid, false)
-	solvedGrid.prettyPrint()
+	//currentGrid.fillGrid(5)
+	//currentGrid.prettyPrint()
+	//_, solvedGrid = recursivelySolveGrid(currentGrid, false)
+	//solvedGrid.prettyPrint()
 }
 
 func main(){
