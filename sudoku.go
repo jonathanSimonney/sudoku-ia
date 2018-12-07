@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	//"log"
@@ -18,6 +19,7 @@ func (a byPossibility) Len() int           { return len(a) }
 func (a byPossibility) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byPossibility) Less(i, j int) bool { return len(a[i].Numbers) < len(a[j].Numbers) }
 
+var debugUgly bool
 
 // structure for a possibility
 type Possibility struct{
@@ -29,7 +31,7 @@ type Possibility struct{
 //structure for the grid
 type Grid struct{
 	Values [9][9]int
-	Possibilities []Possibility
+	//Possibilities []Possibility
 }
 
 //some methods to interact with our grid
@@ -136,7 +138,7 @@ func (this *Grid) prettyPrint(){
 func (this *Grid) fillGrid(howManyValues int){
 	this.emptyGrid()
 
-	_, solvedGrid := recursivelySolveGrid(*this, true, true, 0)
+	_, solvedGrid := recursivelySolveGrid(*this, true)
 	//make sure random changes
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
@@ -163,68 +165,47 @@ func (this *Grid) emptyGrid(){
 }
 
 //a helper to fill the possibles list for our grid
-func (this *Grid) prepare() (isValid bool){
+func (this *Grid) prepare() (isValid bool, nextPossibility Possibility, isSolved bool){
+	var possibilities []Possibility
+
 	for y := range make([]int, 9){
 		for x := range make([]int, 9){
 			if this.Values[y][x] == 0{//because otherwhise there wouldn't be any possibility.
 			    legalNumbers := this.getLegalNumbersAtPos(x, y)
-			    if len(legalNumbers) == 1{
-			    	this.Values[y][x] = legalNumbers[0]
-				}else{
-					this.Possibilities = append(this.Possibilities, Possibility{X: x, Y: y, Numbers: legalNumbers})
-				}
+				possibilities = append(possibilities, Possibility{X: x, Y: y, Numbers: legalNumbers})
 			}else{
 				forbiddenValues := this.getIncludingSets(x, y, false)
 				if intInSlice(this.Values[y][x], forbiddenValues){
-					return false
+					return false, Possibility{X: x, Y: y, Numbers: []int{}}, false
 				}
 			}
 		}
 	}
 
-	//sort.Sort(byPossibility(this.Possibilities))
-
-	//fmt.Println(this.Possibilities)
-
-	return true
-}
-
-//a helper to get the coords AND the list of elems of the best cell
-func (this *Grid) getPossibility(index int) (x int, y int, legalValues []int, isSolved bool){
-	possibilityNumberLeft := len(this.Possibilities)
-
-	if possibilityNumberLeft == index{//there isn't any possibility left
-		return -1, -1, []int{}, true
+	if len(possibilities) == 0{
+		return true, Possibility{X: -1, Y: -1, Numbers: []int{}}, true
 	}
 
-	nextPossibility := this.Possibilities[index]
+	sort.Sort(byPossibility(possibilities))
 
-	return nextPossibility.X, nextPossibility.Y, nextPossibility.Numbers, false
+	return true, possibilities[0], false
 }
 
 //solver for the grid
-func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool, index int) (isSolved bool, solvedGrid Grid){
-	if firstTime{
-		prepareBegin := time.Now()
-		validGrid := grid.prepare()
-		if !validGrid{
-			return false, grid
-		}
-		fmt.Println("grid prepared in ")
-		fmt.Println(time.Since(prepareBegin))
+func recursivelySolveGrid(grid Grid, randomly bool) (isSolved bool, solvedGrid Grid){
+	validGrid, nextPossibility, isSolved := grid.prepare()
+	if !validGrid{
+		return false, grid
 	}
-	x, y, arrayIter, isSolved := grid.getPossibility(index)
-
-	//it avoids to check if the number is valid in addSolvingNumber...
-	if x != -1{
-		arrayIter = grid.getLegalNumbersAtPos(x, y)
-	}
-
 
 	//if the sudoku is already filled, nothing to do
 	if isSolved{
 		return true, grid
 	}
+
+	x := nextPossibility.X
+	y := nextPossibility.Y
+	arrayIter := nextPossibility.Numbers
 
 	//shuffle the array of numbers to test in case the user wants random
 	if randomly{
@@ -235,7 +216,7 @@ func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool, index int) (
 	for _, solvingValue := range arrayIter{
 		addSuccessfull, newGrid := grid.addSolvingNumber(solvingValue, x, y, true)
 		if addSuccessfull{
-			isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly, false, index + 1)
+			isSolved, solvedGrid := recursivelySolveGrid(newGrid, randomly)
 			if isSolved{
 				return true, solvedGrid
 			}
@@ -243,8 +224,6 @@ func recursivelySolveGrid(grid Grid, randomly bool, firstTime bool, index int) (
 		grid.Values[y][x] = 0
 	}
 
-	//fmt.Println("sorry...")
-	//if no value was sent, then the grid can't be solved.
 	return false, grid
 
 
@@ -300,26 +279,26 @@ func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
 		//20 - 30 second OR 1 second with sort
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 3, 0, 8, 5},
-		{0, 0, 1, 0, 2, 0, 0, 0, 0},
-		{0, 0, 0, 5, 0, 7, 0, 0, 0},
-		{0, 0, 4, 0, 0, 0, 1, 0, 0},
-		{0, 9, 0, 0, 0, 0, 0, 0, 0},
-		{5, 0, 0, 0, 0, 0, 0, 7, 3},
-		{0, 0, 2, 0, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 4, 0, 0, 0, 9},
+		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
+		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
+		//{0, 0, 0, 5, 0, 7, 0, 0, 0},
+		//{0, 0, 4, 0, 0, 0, 1, 0, 0},
+		//{0, 9, 0, 0, 0, 0, 0, 0, 0},
+		//{5, 0, 0, 0, 0, 0, 0, 7, 3},
+		//{0, 0, 2, 0, 1, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
 		//insolvable originally long grid 10 - 15 seconds OR infinite with sort
-		//{7, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
-		//{0, 0, 0, 0, 1, 2, 0, 0, 0},
 		//{0, 0, 0, 7, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{1, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 8, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 5, 0, 0},
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{7, 0, 0, 0, 0, 0, 0, 0, 0},
+		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
+		//{0, 0, 0, 0, 1, 2, 0, 0, 0},
 
 		//1 ms
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -355,15 +334,15 @@ func programMain()  {
 		//{0, 1, 0, 0, 0, 0, 0, 0, 0},
 
 		//insolvable simple grid CHECK
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 5, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 5},
-		//{0, 0, 0, 0, 0, 0, 1, 0, 0},
-		//{0, 0, 0, 0, 0, 5, 0, 0, 0},
-		//{0, 5, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 5, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 5},
+		{0, 0, 0, 0, 0, 0, 1, 0, 0},
+		{0, 0, 0, 0, 0, 5, 0, 0, 0},
+		{0, 5, 0, 0, 0, 0, 0, 0, 0},
 
 		//hardest in the world : 3 mSec
 		//{1, 0, 0, 0, 0, 7, 0, 9, 0},
@@ -377,18 +356,20 @@ func programMain()  {
 		//{0, 0, 7, 0, 0, 0, 3, 0, 0},
 	}}
 
+	debugUgly = false
+
 	currentGrid.prettyPrint()
 
 	locBegin := time.Now()
-	_, solvedGrid := recursivelySolveGrid(currentGrid, false, true, 0)
+	_, solvedGrid := recursivelySolveGrid(currentGrid, false)
 	fmt.Println(time.Since(locBegin))
 
 
 	solvedGrid.prettyPrint()
-	//currentGrid.fillGrid(5)
-	//currentGrid.prettyPrint()
-	//_, solvedGrid = recursivelySolveGrid(currentGrid, false, true)
-	//solvedGrid.prettyPrint()
+	currentGrid.fillGrid(5)
+	currentGrid.prettyPrint()
+	_, solvedGrid = recursivelySolveGrid(currentGrid, false)
+	solvedGrid.prettyPrint()
 }
 
 func main(){
