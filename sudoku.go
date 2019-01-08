@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strings"
 
@@ -276,7 +280,7 @@ func shuffle(vals []int){
 func programMain()  {
 	//filling the grid with numbers
 	var currentGrid = Grid{Values:[9][9]int{
-		//34 msecond with sort
+		//34 msecond
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
 		//{0, 0, 0, 0, 0, 3, 0, 8, 5},
 		//{0, 0, 1, 0, 2, 0, 0, 0, 0},
@@ -288,15 +292,15 @@ func programMain()  {
 		//{0, 0, 0, 0, 4, 0, 0, 0, 9},
 
 		//24 ms
-		//{0, 0, 0, 7, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{1, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 8, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 5, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{7, 0, 0, 0, 0, 0, 0, 0, 0},
-		//{0, 0, 0, 0, 0, 0, 7, 0, 0},
-		//{0, 0, 0, 0, 1, 2, 0, 0, 0},
+		{0, 0, 0, 7, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 8, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 5, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{7, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 7, 0, 0},
+		{0, 0, 0, 0, 1, 2, 0, 0, 0},
 
 		//3 ms
 		//{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -343,15 +347,15 @@ func programMain()  {
 		//{0, 5, 0, 0, 0, 0, 0, 0, 0},
 
 		//hardest in the world : 9 mSec
-		{1, 0, 0, 0, 0, 7, 0, 9, 0},
-		{0, 3, 0, 0, 2, 0, 0, 0, 8},
-		{0, 0, 9, 6, 0, 0, 5, 0, 0},
-		{0, 0, 5, 3, 0, 0, 9, 0, 0},
-		{0, 1, 0, 0, 8, 0, 0, 0, 2},
-		{6, 0, 0, 0, 0, 4, 0, 0, 0},
-		{3, 0, 0, 0, 0, 0, 0, 1, 0},
-		{0, 4, 0, 0, 0, 0, 0, 0, 7},
-		{0, 0, 7, 0, 0, 0, 3, 0, 0},
+		//{1, 0, 0, 0, 0, 7, 0, 9, 0},
+		//{0, 3, 0, 0, 2, 0, 0, 0, 8},
+		//{0, 0, 9, 6, 0, 0, 5, 0, 0},
+		//{0, 0, 5, 3, 0, 0, 9, 0, 0},
+		//{0, 1, 0, 0, 8, 0, 0, 0, 2},
+		//{6, 0, 0, 0, 0, 4, 0, 0, 0},
+		//{3, 0, 0, 0, 0, 0, 0, 1, 0},
+		//{0, 4, 0, 0, 0, 0, 0, 0, 7},
+		//{0, 0, 7, 0, 0, 0, 3, 0, 0},
 	}}
 
 	currentGrid.prettyPrint()
@@ -362,34 +366,37 @@ func programMain()  {
 
 
 	solvedGrid.prettyPrint()
-	//currentGrid.fillGrid(5)
-	//currentGrid.prettyPrint()
-	//_, solvedGrid = recursivelySolveGrid(currentGrid, false)
-	//solvedGrid.prettyPrint()
+
+	for i := 0; i < 1; i++{
+		currentGrid.fillGrid(25)
+		currentGrid.prettyPrint()
+		_, solvedGrid = recursivelySolveGrid(currentGrid, false)
+		solvedGrid.prettyPrint()
+	}
 }
 
 func main(){
-	//f, err := os.Create("perf_cpu.perf")
-	//if err != nil {
-	//	log.Fatal("could not create CPU profile: ", err)
-	//}
-	//if err := pprof.StartCPUProfile(f); err != nil {
-	//	log.Fatal("could not start CPU profile: ", err)
-	//}
-	//defer pprof.StopCPUProfile()
-	//
+	f, err := os.Create("perf_cpu.perf")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
 	begin := time.Now()
 	programMain()
 	fmt.Println(time.Since(begin))
 	//
 	//
-	//f, err = os.Create("mem_profile.perf")
-	//if err != nil {
-	//	log.Fatal("could not create memory profile: ", err)
-	//}
-	//runtime.GC() // get up-to-date statistics
-	//if err := pprof.WriteHeapProfile(f); err != nil {
-	//	log.Fatal("could not write memory profile: ", err)
-	//}
-	//f.Close()
+	f, err = os.Create("mem_profile.perf")
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	runtime.GC() // get up-to-date statistics
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+	f.Close()
 }
